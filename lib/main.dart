@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 
 void main() => runApp(const MyApp());
@@ -9,7 +10,8 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Rocket Launch Controller',
-      theme: ThemeData(
+      theme:ThemeData(
+        brightness: Brightness.dark,
         colorSchemeSeed: Colors.blue,
         useMaterial3: true,
       ),
@@ -33,7 +35,6 @@ class _LaunchControllerState extends State<LaunchController> {
   bool _shownLiftoffDialog = false;
 
   void _setCounter(int value) {
-    // Clamp to 0..100 and update UI
     final clamped = value.clamp(_min, _max);
     final reachedLiftoff = clamped == _max;
 
@@ -46,7 +47,7 @@ class _LaunchControllerState extends State<LaunchController> {
       _showLiftoffDialog();
     }
     if (!reachedLiftoff) {
-      // if the value dips below 100 again, allow showing dialog on future 100s
+      // allow the dialog to show again if user drops below 100
       _shownLiftoffDialog = false;
     }
   }
@@ -84,100 +85,111 @@ class _LaunchControllerState extends State<LaunchController> {
 
   @override
   Widget build(BuildContext context) {
-    final numberColor = _numberColorFor(_counter);
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Rocket Launch Controller'),
+        backgroundColor: Colors.black,
         centerTitle: true,
       ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 520),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Display panel
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.black12),
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        _counter == _max ? 'LIFTOFF!' : 'Fuel Level',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        '$_counter',
-                        style: TextStyle(
-                          fontSize: 72,
-                          fontWeight: FontWeight.w900,
-                          color: numberColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+      body: Stack(
+        children: [
+          /// Starry space background
+          CustomPaint(
+            size: Size.infinite,
+            painter: StarryBackground(),
+          ),
 
-                const SizedBox(height: 24),
-
-                // Slider (0..100)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+          /// Control panel content
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 520),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Slider(
-                      min: _min.toDouble(),
-                      max: _max.toDouble(),
-                      value: _counter.toDouble(),
-                      onChanged: (v) => _setCounter(v.toInt()),
+                    Text(
+                      _counter == _max ? 'LIFTOFF! 🚀' : '$_counter',
+                      style: TextStyle(
+                        fontSize: 72,
+                        fontWeight: FontWeight.w900,
+                        color: _numberColorFor(_counter),
+                      ),
                     ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: const [
-                        Text('0'),
-                        Text('100'),
+                    const SizedBox(height: 24),
+
+
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Slider(
+                          min: _min.toDouble(),
+                          max: _max.toDouble(),
+                          value: _counter.toDouble(),
+                          onChanged: (v) => _setCounter(v.toInt()),
+                          activeColor: Colors.blue,
+                          inactiveColor: Colors.grey,
+                        ),
+                        Row(
+                          mainAxisAlignment:MainAxisAlignment.spaceBetween,
+                          children: const [
+                            Text('0'),
+                            Text('100'),
+                          ],
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      alignment: WrapAlignment.center,
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: _counter> _min ? _decrement : null,
+                          icon: const Icon(Icons.remove),
+                          label: const Text('Decrement'),
+                        ),
+                        ElevatedButton.icon(
+                          onPressed: _counter < _max ? _increment : null,
+                          icon: const Icon(Icons.local_fire_department),
+                          label: const Text('Ignite (+1)'),
+                        ),
+                        ElevatedButton.icon(
+                          onPressed: _counter != 0 ? _reset : null,
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Reset'),
+                        ),
                       ],
                     ),
                   ],
                 ),
-
-                const SizedBox(height: 16),
-
-                // Buttons row: Decrement, Ignite, Reset
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  alignment: WrapAlignment.center,
-                  children: [
-                    ElevatedButton.icon(
-                      onPressed: _counter > _min ? _decrement : null,
-                      icon: const Icon(Icons.remove),
-                      label: const Text('Decrement'),
-                    ),
-                    FilledButton.icon(
-                      onPressed: _counter < _max ? _increment : null,
-                      icon: const Icon(Icons.local_fire_department),
-                      label: const Text('Ignite (+1)'),
-                    ),
-                    OutlinedButton.icon(
-                      onPressed: _counter != 0 ? _reset : null,
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Reset'),
-                    ),
-                  ],
-                ),
-              ],
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
+}
+
+class StarryBackground extends CustomPainter {
+  final Random _rand = Random();
+  final int starCount = 120;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = Colors.white;
+    for (int i = 0; i < starCount; i++) {
+      final dx = _rand.nextDouble() * size.width;
+      final dy = _rand.nextDouble() * size.height;
+      final radius = _rand.nextDouble() * 1.5 + 0.5; 
+      canvas.drawCircle(Offset(dx, dy), radius, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate)=> false;
 }
