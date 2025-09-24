@@ -1,147 +1,63 @@
-import 'package:flutter/material.dart';
-
-void main() => runApp(const MyApp());
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class LaunchController extends StatefulWidget {
+  const LaunchController({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Rocket Launch Controller',
-      theme: ThemeData(primarySwatch: Colors.blue),
-      home: const CounterWidget(),
-    );
-  }
+  State<LaunchController> createState() => _LaunchControllerState();
 }
 
-class CounterWidget extends StatefulWidget {
-  const CounterWidget({super.key});
+class _LaunchControllerState extends State<LaunchController> {
+  static const int _min = 0;
+  static const int _max = 100;
 
-  @override
-  _CounterWidgetState createState() => _CounterWidgetState();
-}
-
-class _CounterWidgetState extends State<CounterWidget> {
   int _counter = 0;
+  bool _shownLiftoffDialog = false;
 
-  /// Get color based on counter value
-  Color _getTextColor() {
-    if (_counter == 0) return Colors.red;
-    if (_counter > 50) return Colors.green;
+  void _setCounter(int value) {
+    final clamped = value.clamp(_min, _max);
+    final reachedLiftoff = clamped == _max;
+
+    setState(() {
+      _counter = clamped;
+    });
+
+    if (reachedLiftoff && !_shownLiftoffDialog) {
+      _shownLiftoffDialog = true;
+      _showLiftoffDialog();
+    }
+    if (!reachedLiftoff) {
+      _shownLiftoffDialog = false;
+    }
+  }
+
+  void _increment() => _setCounter(_counter + 1);
+  void _decrement() => _setCounter(_counter - 1);
+  void _reset() => _setCounter(0);
+
+  Color _numberColorFor(int value) {
+    if (value == 0) return Colors.red;
+    if (value > 50) return Colors.green;
     return Colors.orange;
   }
 
-  /// Show popup at liftoff
-  void _showLiftoffPopup() {
-    showDialog(
+  Future<void> _showLiftoffDialog() async {
+    await showDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text("🚀 LIFTOFF!"),
-        content: const Text(
-          "Congratulations, cadet! Your rocket has launched successfully!",
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text("OK"),
+      barrierDismissible: false,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text('LIFTOFF! 🚀'),
+          content: const Text(
+            'Congratulations, Cadet!\nYour rocket has reached maximum launch value (100).',
           ),
-        ],
-      ),
-    );
-  }
-
-  void _incrementCounter() {
-    setState(() {
-      if (_counter < 100) {
-        _counter++;
-        if (_counter == 100) {
-          _showLiftoffPopup();
-        }
-      }
-    });
-  }
-
-  void _decrementCounter() {
-    setState(() {
-      if (_counter > 0) {
-        _counter--;
-      }
-    });
-  }
-
-  void _resetCounter() {
-    setState(() {
-      _counter = 0;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Rocket Launch Controller'),
-        centerTitle: true,
-      ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Counter display
-          Center(
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                _counter == 100 ? "LIFTOFF!" : '$_counter',
-                style: TextStyle(
-                  fontSize: 50.0,
-                  fontWeight: FontWeight.bold,
-                  color: _counter == 100 ? Colors.blue : _getTextColor(),
-                ),
-              ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('OK'),
             ),
-          ),
-
-          // Slider
-          Slider(
-            min: 0,
-            max: 100,
-            value: _counter.toDouble(),
-            onChanged: (double value) {
-              setState(() {
-                _counter = value.toInt();
-                if (_counter == 100) {
-                  _showLiftoffPopup();
-                }
-              });
-            },
-            activeColor: Colors.blue,
-            inactiveColor: Colors.grey,
-          ),
-
-          const SizedBox(height: 20),
-
-          // Control buttons
-          Wrap(
-            spacing: 12,
-            runSpacing: 10,
-            alignment: WrapAlignment.center,
-            children: [
-              ElevatedButton(
-                onPressed: _incrementCounter,
-                child: const Text("Ignite +1"),
-              ),
-              ElevatedButton(
-                onPressed: _decrementCounter,
-                child: const Text("Decrement -1"),
-              ),
-              ElevatedButton(
-                onPressed: _resetCounter,
-                child: const Text("Reset"),
-              ),
-            ],
-          ),
-        ],
-      ),
+          ],
+        );
+      },
     );
   }
-}
+2}
+
