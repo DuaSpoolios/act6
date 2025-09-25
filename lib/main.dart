@@ -93,13 +93,11 @@ class _LaunchControllerState extends State<LaunchController> {
       ),
       body: Stack(
         children: [
-          /// Starry space background
           CustomPaint(
             size: Size.infinite,
             painter: StarryBackground(),
           ),
 
-          /// Control panel content
           Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 520),
